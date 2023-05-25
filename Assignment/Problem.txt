@@ -1,1 +1,91 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+struct Connection {
+    int u;
+    int v;
+};
+
+struct Connection *bridges;
+int bridgeCount;
+
+void dfs(int node, int visited[], int low[], int discovery[], int parent[], int time, int **adj, int n) {
+    visited[node] = 1;
+    discovery[node] = low[node] = ++time;
+
+    for (int i = 0; i < n; i++) {
+        if (adj[node][i]) {
+            int child = i;
+            if (!visited[child]) {
+                parent[child] = node;
+                dfs(child, visited, low, discovery, parent, time, adj, n);
+                low[node] = (low[node] < low[child]) ? low[node] : low[child];
+
+                if (low[child] > discovery[node]) {
+                    bridges[bridgeCount].u = node;
+                    bridges[bridgeCount].v = child;
+                    bridgeCount++;
+                }
+            } else if (child != parent[node]) {
+                low[node] = (low[node] < discovery[child]) ? low[node] : discovery[child];
+            }
+        }
+    }
+}
+
+void findBridges(int n, int **adj) {
+    int *visited = (int *)calloc(n, sizeof(int));
+    int *low = (int *)malloc(n * sizeof(int));
+    int *discovery = (int *)malloc(n * sizeof(int));
+    int *parent = (int *)malloc(n * sizeof(int));
+    bridges = (struct Connection *)malloc(n * sizeof(struct Connection));
+    bridgeCount = 0;
+
+    int time = 0;
+
+    for (int i = 0; i < n; i++) {
+        if (!visited[i]) {
+            dfs(i, visited, low, discovery, parent, time, adj, n);
+        }
+    }
+
+    printf("Critical connections:\n");
+    for (int i = 0; i < bridgeCount; i++) {
+        printf("[%d, %d]\n", bridges[i].u, bridges[i].v);
+    }
+
+    free(visited);
+    free(low);
+    free(discovery);
+    free(parent);
+    free(bridges);
+}
+
+int main() {
+    int n = 4;
+    int **adj = (int **)malloc(n * sizeof(int *));
+    for (int i = 0; i < n; i++) {
+        adj[i] = (int *)calloc(n, sizeof(int));
+    }
+
+    struct Connection connections[] = {{0, 1}, {1, 2}, {0, 2}, {1, 3}};
+    int numConnections = sizeof(connections) / sizeof(connections[0]);
+
+    for (int i = 0; i < numConnections; i++) {
+        int u = connections[i].u;
+        int v = connections[i].v;
+        adj[u][v] = 1;
+        adj[v][u] = 1;
+    }
+
+    findBridges(n, adj);
+
+    for (int i = 0; i < n; i++) {
+        free(adj[i]);
+    }
+    free(adj);
+
+    return 0;
+}
+
 
